@@ -1,4 +1,4 @@
->⚠️ [PLEASE SUBSCRIBE OUR CHANNEL QwikCloud](https://www.youtube.com/@qwikcloud)
+>⚠️ PLEASE SUBSCRIBE OUR CHANNEL [QwikCloud](https://www.youtube.com/@qwikcloud)
 # GSP100
 ## Run in cloudshell
 ```cmd
