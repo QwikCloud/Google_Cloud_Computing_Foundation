@@ -1,0 +1,16 @@
+#Creating a bucket
+gsutil mb gs://$DEVSHELL_PROJECT_ID
+
+#Uploading an object to your bucket
+curl https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ada_Lovelace_portrait.jpg/800px-Ada_Lovelace_portrait.jpg --output ada.jpg
+gsutil cp ada.jpg gs://$DEVSHELL_PROJECT_ID
+rm ada.jpg
+
+#Download an object from your bucket
+gsutil cp -r gs://$DEVSHELL_PROJECT_ID/ada.jpg .
+
+#Copy an object to a folder in the bucket
+gsutil cp gs://$DEVSHELL_PROJECT_ID/ada.jpg gs://$DEVSHELL_PROJECT_ID/image-folder/
+
+#Make your object publicly accessible
+gsutil acl ch -u AllUsers:R gs://$DEVSHELL_PROJECT_ID/ada.jpg
