@@ -2,39 +2,57 @@
 # GSP213
 ## Run in cloudshell
 ```cmd
-#Exporting the Zone
+#Command 1
+#exporting zone
 export ZONE=
 ```
 ```cmd
-#Exporting the Region
-export REGION=${ZONE::-2}
+#project id
+export PROJECT_ID=$(gcloud config get-value project)
 
-#Creating privatenet
-gcloud compute networks create managementnet --subnet-mode=custom
+#Creating Blue server
+gcloud compute instances create blue \
+  --zone=$ZONE \
+  --machine-type=e2-medium \
+  --tags=web-server
 
-#Creating privatenet-region
-gcloud compute networks subnets create managementsubnet-$REGION --network=managementnet --region=$REGION --range=10.130.0.0/20
+#Creating Green server
+gcloud compute instances create green \
+  --zone=$ZONE \
+  --machine-type=e2-medium 
 
-#Creating a privatenet network
-gcloud compute networks create privatenet --subnet-mode=custom
+#Creating firewall rules
+gcloud compute firewall-rules create allow-http-web-server \
+  --network=default \
+  --action=ALLOW \
+  --direction=INGRESS \
+  --source-ranges=0.0.0.0/0 \
+  --target-tags=web-server \
+  --rules=tcp:80,icmp
 
-#Creating a privatenet-subnet
-gcloud compute networks subnets create privatesubnet-$REGION --network=privatenet --region=$REGION --range=172.16.0.0/24
-gcloud compute networks subnets create privatesubnet-$REGION2 --network=privatenet --region=$REGION2 --range=172.20.0.0/20
-
-#Creating firewall rule
-gcloud compute firewall-rules create managementnet-allow-icmp-ssh-rdp --direction=INGRESS --priority=1000 --network=managementnet --action=ALLOW --rules=icmp,tcp:22,tcp:3389 --source-ranges=0.0.0.0/0
-gcloud compute firewall-rules create privatenet-allow-icmp-ssh-rdp --direction=INGRESS --priority=1000 --network=privatenet --action=ALLOW --rules=icmp,tcp:22,tcp:3389 --source-ranges=0.0.0.0/0
-
-#Creating VM Instances
-gcloud compute instances create	managementnet-${REGION}-vm --zone=$ZONE --machine-type=e2-micro --subnet=managementsubnet-$REGION
-gcloud compute instances create privatenet-${REGION}-vm --zone=$ZONE --machine-type=e2-micro --subnet=privatesubnet-$REGION
-
-#Creating vm-appliance
-gcloud compute instances create vm-appliance \
---zone=$ZONE \
---machine-type=e2-standard-4 \
---network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=privatesubnet-$REGION \
---network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=managementsubnet-$REGION \
---network-interface=network-tier=PREMIUM,stack-type=IPV4_ONLY,subnet=mynetwork
+#Creating test-vm
+gcloud compute instances create test-vm --machine-type=e2-micro --subnet=default --zone=$ZONE
+```
+### IAM & admin > Service Accounts > Create service account > Name= `Network-admin` > Role > Compute Engine > Compute Network Admin > Save
+```cmd
+#Command 2
+gcloud iam service-accounts keys create key.json --iam-account=network-admin@$PROJECT_ID.iam.gserviceaccount.com
+gcloud compute ssh blue --zone=$ZONE --quiet
+```
+```cmd
+#Command 3
+sudo apt-get install nginx-light -y
+sudo sed -i 's#<h1>Welcome to nginx!</h1>#<h1>Welcome to the blue server!</h1>#' /var/www/html/index.nginx-debian.html
+cat /var/www/html/index.nginx-debian.html
+exit
+```
+```cmd
+#Command 4
+gcloud beta compute ssh green --zone=$ZONE --quiet
+```
+```cmd
+#Command 5
+sudo apt-get install nginx-light -y
+sudo sed -i 's#<h1>Welcome to nginx!</h1>#<h1>Welcome to the Green server!</h1>#' /var/www/html/index.nginx-debian.html
+cat /var/www/html/index.nginx-debian.html
 ```
